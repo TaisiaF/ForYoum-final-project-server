@@ -7,6 +7,12 @@ const router = express.Router();
 
 router.get("/me", authMiddleware, asyncHandler(userController.getMe));
 
+router.get("/:id", asyncHandler(userController.getUserById));
+
+router.get("/:id/discussions", asyncHandler(userController.getUserDiscussions));
+
+router.get("/me/replies", authMiddleware, asyncHandler(userController.getMyReplies));
+
 router.patch("/me/username", authMiddleware, asyncHandler(userController.updateUsername));
 
 router.patch("/me/email", authMiddleware, asyncHandler(userController.updateEmail));
@@ -15,10 +21,7 @@ router.patch("/me/password", authMiddleware, asyncHandler(userController.updateP
 
 router.delete("/me", authMiddleware, asyncHandler(userController.deleteMe));
 
-router.get("/:id", asyncHandler(userController.getUserById));
+router.delete("/:id", authMiddleware, asyncHandler(userController.deleteUserById));
 
-router.get("/:id/discussions", asyncHandler(userController.getUserDiscussions));
-
-router.get("/me/replies", authMiddleware, asyncHandler(userController.getMyReplies));
 
 export default router;

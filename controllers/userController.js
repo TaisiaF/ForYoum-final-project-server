@@ -5,8 +5,7 @@ import Reply from "../MongoDB/Models/Reply.js";
 
 const getMe = async (req, res) => {
 
-    const user = await User.findById(req.user.id)
-        .select("-passwordHash");
+    const user = await User.findById(req.user.id).select("-passwordHash");
 
     if (!user) {
         return res.status(404).json({
@@ -106,6 +105,32 @@ const updatePassword = async (req, res) => {
 };
 
 
+const deleteUserById = async (req, res) => {
+
+    if (req.user.role !== "admin") {
+        return res.status(403).json({
+            message: "Admin only"
+        });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    await user.deleteOne();
+
+    res.json({
+        message: "User deleted"
+    });
+};
+
+
+
+
 const deleteMe = async (req, res) => {
 
     const user = await User.findById(req.user.id);
@@ -127,8 +152,7 @@ const deleteMe = async (req, res) => {
 
 const getUserById = async (req, res) => {
 
-    const user = await User.findById(req.params.id)
-        .select("-email -passwordHash");
+    const user = await User.findById(req.params.id).select("-email -passwordHash");
 
     if (!user) {
         return res.status(404).json({
@@ -142,9 +166,11 @@ const getUserById = async (req, res) => {
 
 const getUserDiscussions = async (req, res) => {
 
-    const discussions = await Discussion.find({
-        authorId: req.params.id
-    }).sort({ createdAt: -1 });
+const discussions = await Discussion.find({
+    authorId: req.params.id
+})
+.populate("authorId", "username role")
+.sort({ createdAt: -1 });
 
     res.json(discussions);
 };
@@ -166,6 +192,7 @@ export default {
     updateUsername,
     updateEmail,
     updatePassword,
+    deleteUserById,
     deleteMe,
     getUserById,
     getUserDiscussions,

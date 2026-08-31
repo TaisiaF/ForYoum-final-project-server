@@ -51,11 +51,6 @@ discussionSchema.index({ createdAt: -1 });
 
 discussionSchema.index({ category: 1 });
 
-discussionSchema.index({
-    title: "text",
-    content: "text"  //תומך בחיפוש לפי מילות מפתח
-});
-
 discussionSchema.index({ authorId: 1 });
 
 export default mongoose.model("discussion",discussionSchema)

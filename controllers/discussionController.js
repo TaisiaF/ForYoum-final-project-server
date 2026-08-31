@@ -30,6 +30,8 @@ const getDiscussions = async (req, res) => {
         sort = "newest"
     } = req.query;
 
+    console.log("SEARCH =", search);
+
     const { skip } = getPagination(page, limit);
 
     const filter = {};
@@ -41,15 +43,40 @@ const getDiscussions = async (req, res) => {
 
     // פילטור לפי תאריך
     if (after || before) {
+
         filter.createdAt = {};
+
         if (after) filter.createdAt.$gte = new Date(after);
-        if (before) filter.createdAt.$lte = new Date(before);
+        
+        if (before) {
+            const beforeDate =new Date(before);
+            beforeDate.setHours( 23, 59, 59, 999 );
+            filter.createdAt.$lte = beforeDate;
+        }
     }
 
     // פילטור לפי מילות מפתח
-    if (search) {
-        filter.$text = { $search: search };
-    }
+if (search) {
+
+    filter.$or = [
+
+        {
+            title: {
+                $regex: search,
+                $options: "i" //אותיות גדולות/קטנות לא משפיעות על חיפוש
+            }
+        },
+
+        {
+            content: {
+                $regex: search,
+                $options: "i"
+            }
+        }
+
+    ];
+
+}
 
     // סוגי מיון
     let sortOption = {};
@@ -68,16 +95,51 @@ const getDiscussions = async (req, res) => {
 
     //  איגוד שדות נחוצים להצגה (בתוך משתנה)
     const discussions = await Discussion.aggregate([
-        { $match: filter },
+        { $match: filter }, //רק שיחות שתואמות לפילטר שנבחר
+
         {
             $addFields: {
                 likedByCount: { $size: "$likedBy" }
             }
         },
+
+        {
+            $lookup: {  //idמוצא משתמש לפי
+                from: "users",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "author" //מחזיר מערך (של משתמש 1) בשם
+            }
+        },
+
+        { $unwind: "$author"}, //מחלץ את המשתמש מהמערך 
+                                //(יש רק שמתמש 1 לכן אין סיבה שישמר במערך)
+        {
+            $project: {  //קובע מבנה שבו יחזרו השדות
+                title: 1,
+                content: 1,
+                category: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                replyCount: 1,
+                likedByCount: 1,
+
+                author: {
+                    _id: "$author._id",
+                    username: "$author.username",
+                    role: "$author.role"
+                }
+            }
+        },
+
         { $sort: sortOption },
         { $skip: skip },
         { $limit: Number(limit) }
     ]);
+
+    console.log(
+        discussions.map(d => d.title)
+    );
 
     const total = await Discussion.countDocuments(filter);
 
@@ -95,7 +157,8 @@ const getDiscussions = async (req, res) => {
 
 const getDiscussionById = async (req, res) => {
 
-    const discussion = await Discussion.findById(req.params.id);
+    const discussion = await Discussion.findById(req.params.id)
+    .populate("authorId", "username role");
 
     if (!discussion) {
         return res.status(404).json({

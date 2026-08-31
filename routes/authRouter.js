@@ -34,4 +34,18 @@ router.post(
     )
 );
 
+router.post(
+    "/verify-registration",
+    asyncHandler(
+        authController.verifyRegistration
+    )
+);
+
+router.post(
+    "/verify-login",
+    asyncHandler(
+        authController.verifyLogin
+    )
+);
+
 export default router;

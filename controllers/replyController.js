@@ -13,6 +13,16 @@ const createReply = async (req, res) => {
         });
     }
 
+    if (parentId) {  //בדיקה שהנמען של התגובה שייך לאותה שיחה
+        const parentReply =await Reply.findById(parentId);
+
+        if (!parentReply || parentReply.discussionId.toString() !== discussionId) {
+            return res.status(400).json({
+                message: "Invalid parent reply"
+            });
+        }
+    }
+
     // יצירת תגובה
     const reply = await Reply.create({
         discussionId,
@@ -29,11 +39,29 @@ const createReply = async (req, res) => {
 
 
 
+const getReplyById = async (req, res) => {
+
+    const reply = await Reply.findById(req.params.id)
+        .populate("authorId", "username role");
+
+    if (!reply) {
+        return res.status(404).json({
+            message: "Reply not found"
+        });
+    }
+
+    res.json(reply);
+};
+
+
+
 const getRepliesByDiscussion = async (req, res) => {
 
-    const replies = await Reply.find({
-        discussionId: req.params.id
-    }).sort({ createdAt: 1 });
+const replies = await Reply.find({
+    discussionId: req.params.id
+})
+.populate("authorId", "username role")
+.sort({ createdAt: 1 });
 
     // מסדר תגובות לפי נמען
     const replyMap = {};
@@ -41,6 +69,7 @@ const getRepliesByDiscussion = async (req, res) => {
 
     replies.forEach(reply => {
         reply = reply.toObject();
+        reply.likedByCount = reply.likedBy.length;
         reply.children = [];
         replyMap[reply._id] = reply;
     });
@@ -98,15 +127,17 @@ const updateReply = async (req, res) => {
 
 const deleteReplyRecursive = async (replyId) => {
 
-    const children = await Reply.find({
-        parentId: replyId
-    });
+    let deletedCount = 1;
+
+    const children = await Reply.find({ parentId: replyId });
 
     for (const child of children) {
-        await deleteReplyRecursive(child._id);
+        deletedCount += await deleteReplyRecursive (child._id);
     }
 
     await Reply.findByIdAndDelete(replyId);
+
+    return deletedCount;
 };
 
 const deleteReply = async (req, res) => {
@@ -131,12 +162,12 @@ const deleteReply = async (req, res) => {
         });
     }
 
-    await deleteReplyRecursive(reply._id);
+    const deletedCount = await deleteReplyRecursive (reply._id );
 
     // מעדכנים שדה של כמות תגובות
     await Discussion.findByIdAndUpdate(
         reply.discussionId,
-        { $inc: { replyCount: -1 } }
+        { $inc: { replyCount: -deletedCount } }
     );
 
     res.json({
@@ -184,6 +215,7 @@ const unlikeReply = async (req, res) => {
 
 export default {
     createReply,
+    getReplyById,
     getRepliesByDiscussion,
     updateReply,
     deleteReply,

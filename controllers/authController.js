@@ -1,14 +1,18 @@
 import bcrypt from "bcrypt";
 import User from "../MongoDB/Models/User.js";
 import generateToken from "../utils/generateToken.js";
+import { sendVerificationCode, verifyCode} from "../utils/verificationService.js";
+
+
 
 const register = async (req, res) => {
 
-    const {
-        username,
-        email,
-        password
-    } = req.body;
+const {
+    username,
+    email,
+    password,
+    role = "user"
+} = req.body;
 
     const existingUsername = await User.findOne({
         username
@@ -30,28 +34,27 @@ const register = async (req, res) => {
         });
     }
 
-    const passwordHash =
-        await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
         username,
         email: email.toLowerCase(),
-        passwordHash
+        passwordHash,
+        role
     });
 
-    const token =
-        generateToken(user);
+
+    await sendVerificationCode( user, "Forum Verification Code");
 
     return res.status(201).json({
-        token,
-        user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role
-        }
-    });
+    message: "Verification code sent",
+    email: user.email
+});
+
 };
+
+
+
 
 const login = async (req, res) => {
 
@@ -83,10 +86,47 @@ const login = async (req, res) => {
         });
     }
 
-    const token =
-        generateToken(user);
+    if (!user.verified) {
+        return res.status(403).json({
+            message:
+                "Email not verified"
+        });
+    }
+
+    await sendVerificationCode( user, "Login Verification Code");
 
     return res.status(200).json({
+        message: "Verification code sent",
+        email: user.email
+    });
+};
+
+
+
+const verifyRegistration = async (req, res) => {
+    const { email, code } = req.body;
+
+    const user = await verifyCode( email, code);
+
+    user.verified = true;
+
+    await user.save();
+
+    res.status(200).json({
+        message: "Account verified"
+    });
+};
+
+
+
+const verifyLogin = async (req, res) => {
+    const { email, code } = req.body;
+
+    const user = await verifyCode( email, code);
+
+    const token = generateToken(user);
+
+    res.status(200).json({
         token,
         user: {
             id: user._id,
@@ -99,5 +139,7 @@ const login = async (req, res) => {
 
 export default {
     register,
-    login
+    login,
+    verifyRegistration,
+    verifyLogin
 };

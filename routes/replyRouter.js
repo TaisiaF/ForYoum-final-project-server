@@ -9,6 +9,8 @@ router.post("/", authMiddleware, asyncHandler(replyController.createReply));
 
 router.get("/discussion/:id", asyncHandler(replyController.getRepliesByDiscussion));
 
+router.get("/:id", asyncHandler(replyController.getReplyById));
+
 router.patch("/:id", authMiddleware, asyncHandler(replyController.updateReply));
 
 router.delete("/:id", authMiddleware, asyncHandler(replyController.deleteReply));

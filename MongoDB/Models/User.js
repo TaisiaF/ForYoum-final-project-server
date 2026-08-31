@@ -25,6 +25,18 @@ email:{
 passwordHash:{
     type:String,
     required:true
+},
+verified: {
+    type: Boolean,
+    default: false
+},
+verificationCode: {
+    type: String,
+    default: null
+},
+verificationCodeExpires: {
+    type: Date,
+    default: null
 }
 
 

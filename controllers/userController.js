@@ -17,6 +17,42 @@ const getMe = async (req, res) => {
 };
 
 
+const getUserById = async (req, res) => {
+
+    const user = await User.findById(req.params.id).select("-email -passwordHash");
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    res.json(user);
+};
+
+
+const getUserDiscussions = async (req, res) => {
+
+const discussions = await Discussion.find({
+    authorId: req.params.id
+})
+.populate("authorId", "username role")
+.sort({ createdAt: -1 });
+
+    res.json(discussions);
+};
+
+
+const getMyReplies = async (req, res) => {
+
+    const replies = await Reply.find({
+        authorId: req.user.id
+    }).sort({ createdAt: -1 });
+
+    res.json(replies);
+};
+
+
 const updateUsername = async (req, res) => {
 
     const { username } = req.body;
@@ -105,6 +141,66 @@ const updatePassword = async (req, res) => {
 };
 
 
+const banUser = async (req, res) => {
+
+    if (req.user.role !== "admin") {
+        return res.status(403).json({
+            message: "Admin only"
+        });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    if (user.role === "admin") {
+        return res.status(403).json({
+            message: "Cannot ban an admin"
+        });
+    }
+
+    user.banned = true;
+
+    await user.save();
+
+    res.json({
+        message: "User banned"
+    });
+};
+
+
+const unbanUser = async (req, res) => {
+
+    if (req.user.role !== "admin") {
+        return res.status(403).json({
+            message: "Admin only"
+        });
+    }
+
+    const user = await User.findById(
+        req.params.id
+    );
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    user.banned = false;
+
+    await user.save();
+
+    res.json({
+        message: "User unbanned"
+    });
+};
+
+
 const deleteUserById = async (req, res) => {
 
     if (req.user.role !== "admin") {
@@ -150,41 +246,7 @@ const deleteMe = async (req, res) => {
 
 
 
-const getUserById = async (req, res) => {
 
-    const user = await User.findById(req.params.id).select("-email -passwordHash");
-
-    if (!user) {
-        return res.status(404).json({
-            message: "User not found"
-        });
-    }
-
-    res.json(user);
-};
-
-
-const getUserDiscussions = async (req, res) => {
-
-const discussions = await Discussion.find({
-    authorId: req.params.id
-})
-.populate("authorId", "username role")
-.sort({ createdAt: -1 });
-
-    res.json(discussions);
-};
-
-
-
-const getMyReplies = async (req, res) => {
-
-    const replies = await Reply.find({
-        authorId: req.user.id
-    }).sort({ createdAt: -1 });
-
-    res.json(replies);
-};
 
 
 export default {
@@ -192,6 +254,8 @@ export default {
     updateUsername,
     updateEmail,
     updatePassword,
+    banUser,
+    unbanUser,
     deleteUserById,
     deleteMe,
     getUserById,

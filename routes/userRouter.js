@@ -19,6 +19,10 @@ router.patch("/me/email", authMiddleware, asyncHandler(userController.updateEmai
 
 router.patch("/me/password", authMiddleware, asyncHandler(userController.updatePassword));
 
+router.patch("/:id/ban", authMiddleware, asyncHandler(userController.banUser));
+
+router.patch("/:id/unban", authMiddleware, asyncHandler(userController.unbanUser));
+
 router.delete("/me", authMiddleware, asyncHandler(userController.deleteMe));
 
 router.delete("/:id", authMiddleware, asyncHandler(userController.deleteUserById));

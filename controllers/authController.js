@@ -74,6 +74,12 @@ const login = async (req, res) => {
         });
     }
 
+    if (user.banned) {
+    return res.status(403).json({
+        message: "Your account has been banned"
+    });
+}
+
     const isMatch =
         await bcrypt.compare(
             password,

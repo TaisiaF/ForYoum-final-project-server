@@ -37,6 +37,10 @@ verificationCode: {
 verificationCodeExpires: {
     type: Date,
     default: null
+},
+banned: {
+    type: Boolean,
+    default: false
 }
 
 

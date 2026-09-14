@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../MongoDB/Models/User.js";
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
 
     const authHeader = req.headers.authorization;
 
@@ -21,6 +22,20 @@ const authMiddleware = (req, res, next) => {
             token,
             process.env.JWT_SECRET
         );
+
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({
+                message: "User not found"
+            });
+        }
+
+        if (user.banned) {
+            return res.status(403).json({
+                message: "Your account has been banned"
+            });
+        }
 
         req.user = decoded;
 

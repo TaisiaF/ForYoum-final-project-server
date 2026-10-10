@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
-import Connect from './MongoDB/connect.js'
 import dotenv from "dotenv";
+import Connect from './MongoDB/connect.js'
 import rateLimit from "express-rate-limit";
 
 import authRoutes from "./routes/authRouter.js";
@@ -9,8 +9,21 @@ import userRoutes from "./routes/userRouter.js";
 import discussionRoutes from "./routes/discussionRouter.js";
 import replyRoutes from "./routes/replyRouter.js";
 
+import cloudinary from "./utils/cloudinary.js";
+
 
 dotenv.config();
+
+cloudinary.api.ping()
+    .then(() => {
+        console.log("CLOUDINARY CONNECTION: SUCCESS");
+    })
+    .catch(error => {
+        console.log(
+            "CLOUDINARY CONNECTION: FAILED",
+            error.message
+        );
+    });
 
 
 const app = express()

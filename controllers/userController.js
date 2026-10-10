@@ -2,6 +2,7 @@ import User from "../MongoDB/Models/User.js";
 import bcrypt from "bcrypt";
 import Discussion from "../MongoDB/Models/Discussion.js";
 import Reply from "../MongoDB/Models/Reply.js";
+import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 
 const getMe = async (req, res) => {
 
@@ -225,8 +226,6 @@ const deleteUserById = async (req, res) => {
 };
 
 
-
-
 const deleteMe = async (req, res) => {
 
     const user = await User.findById(req.user.id);
@@ -245,6 +244,35 @@ const deleteMe = async (req, res) => {
 };
 
 
+const updateProfilePicture = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            message: "Profile picture is required"
+        });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    const result = await uploadToCloudinary(
+        req.file.buffer
+    );
+
+    user.profilePicture = result.secure_url;
+
+    await user.save();
+
+    res.json({
+        message: "Profile picture updated successfully",
+        profilePicture: user.profilePicture
+    });
+};
+
 
 
 
@@ -260,7 +288,8 @@ export default {
     deleteMe,
     getUserById,
     getUserDiscussions,
-    getMyReplies
+    getMyReplies,
+    updateProfilePicture
 };
 
 

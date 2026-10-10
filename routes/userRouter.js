@@ -2,6 +2,7 @@ import express from "express";
 import userController from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -18,6 +19,8 @@ router.patch("/me/username", authMiddleware, asyncHandler(userController.updateU
 router.patch("/me/email", authMiddleware, asyncHandler(userController.updateEmail));
 
 router.patch("/me/password", authMiddleware, asyncHandler(userController.updatePassword));
+
+router.patch("/me/profile-picture", authMiddleware, upload.single("profilePicture"), asyncHandler(userController.updateProfilePicture));
 
 router.patch("/:id/ban", authMiddleware, asyncHandler(userController.banUser));
 

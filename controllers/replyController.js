@@ -60,7 +60,7 @@ const getRepliesByDiscussion = async (req, res) => {
 const replies = await Reply.find({
     discussionId: req.params.id
 })
-.populate("authorId", "username role")
+.populate("authorId", "username role profilePicture")
 .sort({ createdAt: 1 });
 
     // מסדר תגובות לפי נמען

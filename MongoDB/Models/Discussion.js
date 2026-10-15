@@ -17,6 +17,10 @@ content:{
     required:true,
     minLength:2
 },
+image: {
+    type: String,
+    default: null
+},
 category:{
     type:String,
     required:true,

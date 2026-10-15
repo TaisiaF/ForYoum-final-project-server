@@ -1,16 +1,29 @@
 import Discussion from "../MongoDB/Models/Discussion.js";
 import Reply from "../MongoDB/Models/Reply.js";
 import getPagination from "../utils/pagination.js";
+import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+
 
 const createDiscussion = async (req, res) => {
-
     const { title, content, category } = req.body;
+
+    let image = null;
+
+    if (req.file) {
+        const result = await uploadToCloudinary(
+            req.file.buffer,
+            "foryoum/discussion-images"
+        );
+
+        image = result.secure_url;
+    }
 
     const discussion = await Discussion.create({
         title,
         content,
         category,
-        authorId: req.user.id
+        authorId: req.user.id,
+        image
     });
 
     res.status(201).json(discussion);
@@ -56,27 +69,27 @@ const getDiscussions = async (req, res) => {
     }
 
     // פילטור לפי מילות מפתח
-if (search) {
+    if (search) {
 
-    filter.$or = [
+        filter.$or = [
 
-        {
-            title: {
-                $regex: search,
-                $options: "i" //אותיות גדולות/קטנות לא משפיעות על חיפוש
+            {
+                title: {
+                    $regex: search,
+                    $options: "i" //אותיות גדולות/קטנות לא משפיעות על חיפוש
+                }
+            },
+
+            {
+                content: {
+                    $regex: search,
+                    $options: "i"
+                }
             }
-        },
 
-        {
-            content: {
-                $regex: search,
-                $options: "i"
-            }
-        }
+        ];
 
-    ];
-
-}
+    }
 
     // סוגי מיון
     let sortOption = {};
@@ -127,7 +140,8 @@ if (search) {
                 author: {
                     _id: "$author._id",
                     username: "$author.username",
-                    role: "$author.role"
+                    role: "$author.role",
+                    profilePicture: "$author.profilePicture"
                 }
             }
         },
@@ -158,7 +172,7 @@ if (search) {
 const getDiscussionById = async (req, res) => {
 
     const discussion = await Discussion.findById(req.params.id)
-    .populate("authorId", "username role");
+    .populate("authorId", "username role profilePicture");
 
     if (!discussion) {
         return res.status(404).json({

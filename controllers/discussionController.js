@@ -1,5 +1,6 @@
 import Discussion from "../MongoDB/Models/Discussion.js";
 import Reply from "../MongoDB/Models/Reply.js";
+import User from "../MongoDB/Models/User.js";
 import getPagination from "../utils/pagination.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 
@@ -243,6 +244,12 @@ const deleteDiscussion = async (req, res) => {
         discussionId: discussion._id
     });
 
+    //מוחקים את השיחה מ"שיחות שמורות" של המשתמשים
+    await User.updateMany(
+        { bookmarkedDiscussions: discussion._id },
+        { $pull: { bookmarkedDiscussions: discussion._id } }
+    );
+
     await discussion.deleteOne();
 
     res.json({
@@ -289,6 +296,40 @@ const unlikeDiscussion = async (req, res) => {
 
 
 
+const bookmarkDiscussion = async (req, res) => {
+    const discussion = await Discussion.findById(req.params.id);
+
+    if (!discussion) {
+        return res.status(404).json({
+            message: "Discussion not found"
+        });
+    }
+
+    await User.updateOne(
+        { _id: req.user.id },
+        { $addToSet: { bookmarkedDiscussions: discussion._id } }
+    );
+
+    res.json({
+        message: "Discussion bookmarked successfully"
+    });
+};
+
+
+
+const unbookmarkDiscussion = async (req, res) => {
+    await User.updateOne(
+        { _id: req.user.id },
+        { $pull: { bookmarkedDiscussions: req.params.id } }
+    );
+
+    res.json({
+        message: "Bookmark removed successfully"
+    });
+};
+
+
+
 export default {
     createDiscussion,
     getDiscussions,
@@ -296,5 +337,7 @@ export default {
     updateDiscussion,
     deleteDiscussion,
     likeDiscussion,
-    unlikeDiscussion
+    unlikeDiscussion,
+    bookmarkDiscussion,
+    unbookmarkDiscussion
 };

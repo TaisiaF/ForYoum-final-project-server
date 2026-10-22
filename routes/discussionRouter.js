@@ -20,4 +20,8 @@ router.post("/:id/like", authMiddleware, asyncHandler(discussionController.likeD
 
 router.delete("/:id/like", authMiddleware, asyncHandler(discussionController.unlikeDiscussion));
 
+router.patch("/:id/bookmark", authMiddleware, asyncHandler(discussionController.bookmarkDiscussion));
+
+router.delete("/:id/bookmark", authMiddleware, asyncHandler(discussionController.unbookmarkDiscussion));
+
 export default router;

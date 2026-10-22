@@ -6,7 +6,7 @@ username:{
     type:String,
     required:true,
     unique:true,
-    minLength:2,
+    minLength:3,
     trim: true
 },
 role:{
@@ -43,10 +43,20 @@ banned: {
     default: false
 },
 
+isPrivate: {
+    type: Boolean,
+    default: false
+},
+
 profilePicture: {
     type: String,
     default: null
-}
+},
+
+bookmarkedDiscussions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "discussion"
+}]
 
 
 })

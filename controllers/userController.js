@@ -19,12 +19,21 @@ const getMe = async (req, res) => {
 
 
 const getUserById = async (req, res) => {
-
-    const user = await User.findById(req.params.id).select("-email -passwordHash");
+    const user = await User.findById(req.params.id)
+        .select("-email -passwordHash");
 
     if (!user) {
         return res.status(404).json({
             message: "User not found"
+        });
+    }
+
+    const isOwner =
+        req.user?.id === user._id.toString();
+
+    if (user.isPrivate && !isOwner) {
+        return res.status(403).json({
+            message: "This profile is private"
         });
     }
 
@@ -51,6 +60,27 @@ const getMyReplies = async (req, res) => {
     }).sort({ createdAt: -1 });
 
     res.json(replies);
+};
+
+
+const getMyBookmarks = async (req, res) => {
+    const user = await User.findById(req.user.id)
+        .select("bookmarkedDiscussions")
+        .populate({
+            path: "bookmarkedDiscussions",
+            populate: {
+                path: "authorId",
+                select: "username role profilePicture"
+            }
+        });
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    res.json(user.bookmarkedDiscussions);
 };
 
 
@@ -138,6 +168,33 @@ const updatePassword = async (req, res) => {
 
     res.json({
         message: "Password updated successfully"
+    });
+};
+
+
+const updateProfilePrivacy = async (req, res) => {
+    const { isPrivate } = req.body;
+
+    if (typeof isPrivate !== "boolean") {
+        return res.status(400).json({
+            message: "isPrivate must be a boolean"
+        });
+    }
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+
+    user.isPrivate = isPrivate;
+    await user.save();
+
+    res.json({
+        message: "Profile privacy updated successfully",
+        isPrivate: user.isPrivate
     });
 };
 
@@ -282,6 +339,7 @@ export default {
     updateUsername,
     updateEmail,
     updatePassword,
+    updateProfilePrivacy,
     banUser,
     unbanUser,
     deleteUserById,
@@ -289,7 +347,8 @@ export default {
     getUserById,
     getUserDiscussions,
     getMyReplies,
-    updateProfilePicture
+    updateProfilePicture,
+    getMyBookmarks
 };
 
 
